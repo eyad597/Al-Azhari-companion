@@ -7,8 +7,8 @@ client = OpenAI(
 
 completion = client.chat.completions.create(
   extra_headers={
-    "HTTP-Referer": "<https://alazharasistant.netlify.app/>", # Optional. Site URL for rankings on openrouter.ai.
-    "X-Title": "<https://alazharasistant.netlify.app/>", # Optional. Site title for rankings on openrouter.ai.
+    "HTTP-Referer": "<>", # Optional. Site URL for rankings on openrouter.ai.
+    "X-Title": "<>", # Optional. Site title for rankings on openrouter.ai.
   },
   extra_body={},
   model="google/gemini-2.0-flash-exp:free",
