@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>رفيق الأزهر | مساعدك الدراسي الذكي</title>
+    <link rel="stylesheet" href="index.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://esm.sh/@google/genai@^0.7.0",
+          "marked": "https://esm.sh/marked@^15.0.7",
+          "pdfjs-dist": "https://esm.sh/pdfjs-dist@4.4.168/build/pdf.mjs"
+        }
+      }
+    </script>
+    <script type="module" src="index.tsx"></script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div class="app-layout">
+      <div class="overlay hidden"></div>
+      <!-- History Sidebar -->
+      <aside class="history-sidebar">
+        <header class="history-header">
+           <button id="new-chat-button">
+             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
+             <span>محادثة جديدة</span>
+           </button>
+        </header>
+        <div class="history-list-container">
+            <nav id="history-list" aria-label="سجل المحادثات"></nav>
+        </div>
+        <div class="theme-switcher">
+            <button data-theme="light" title="مظهر فاتح">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            </button>
+            <button data-theme="dark" title="مظهر داكن">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
+            <button data-theme="system" title="مظهر النظام">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            </button>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <div class="main-content">
+        <aside class="sidebar">
+          <header class="sidebar-header">
+            <h2>لوحة التحكم</h2>
+            <p>اتبع الخطوات لطرح سؤالك</p>
+          </header>
+
+          <div class="sidebar-content">
+            <!-- Step 1: File Upload -->
+            <div class="form-step" id="file-upload-step">
+              <h3>الخطوة 1: ارفع ملف PDF</h3>
+              <div id="drop-zone">
+                <input type="file" id="file-upload" accept="application/pdf" />
+                <div id="drop-zone-prompt">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="48"
+                    height="48"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="12" y1="18" x2="12" y2="12"></line>
+                    <line x1="9" y1="15" x2="15" y2="15"></line>
+                  </svg>
+                  <p>اسحب وأفلت الملف هنا أو انقر للاختيار</p>
+                  <small>سيتم بدء محادثة جديدة عند رفع ملف</small>
+                </div>
+              </div>
+              <div id="file-info-container" class="hidden">
+                <div id="file-name-wrapper">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                  <span id="file-name"></span>
+                </div>
+                <button id="change-file-button" title="تغيير الملف" class="hidden">
+                  تغيير
+                </button>
+              </div>
+            </div>
+
+            <!-- Step 2: Page Selection -->
+            <div id="page-selector-container" class="form-step hidden">
+              <h3>الخطوة 2: حدد الصفحات</h3>
+              <div id="page-selector-grid"></div>
+            </div>
+          </div>
+
+          <!-- Step 3: Prompt Input -->
+          <footer class="sidebar-footer">
+            <form id="prompt-form">
+              <div class="input-wrapper">
+                <textarea
+                  id="prompt-input"
+                  rows="1"
+                  placeholder="اكتب سؤالك هنا..."
+                  required
+                  disabled
+                ></textarea>
+                <button
+                  type="button"
+                  id="mic-button"
+                  title="سجل سؤالك صوتيًا"
+                  disabled
+                  aria-label="استخدام الميكروفون"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="22"></line>
+                  </svg>
+                </button>
+                <button
+                  type="submit"
+                  id="submit-button"
+                  title="أرسل السؤال"
+                  disabled
+                  aria-label="إرسال"
+                >
+                  <div class="spinner hidden"></div>
+                  <svg
+                    class="send-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+                </button>
+              </div>
+            </form>
+          </footer>
+        </aside>
+
+        <main class="chat-container">
+          <header class="chat-header">
+            <div>
+              <button id="menu-toggle-button" aria-label="عرض سجل المحادثات">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+              </button>
+              <h1>رفيق الأزهر</h1>
+              <p>
+                شريكك الذكي في فهم مناهج اللغة العربية للمرحلة الثانوية
+              </p>
+            </div>
+          </header>
+          <div id="chat-messages" aria-live="polite">
+              <div id="welcome-message">
+                  <div class="logo">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+                  </div>
+                  <h2>أهلاً بك في <strong>رفيق الأزهر</strong></h2>
+                  <p>ابدأ محادثة جديدة، ارفع ملف PDF من كتابك الدراسي ثم اطرح سؤالك.</p>
+              </div>
+              <!-- Chat messages will be dynamically inserted here -->
+          </div>
+        </main>
+      </div>
+    </div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
