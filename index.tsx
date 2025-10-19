@@ -66,6 +66,7 @@ const ACTIVE_SESSION_KEY = 'gemini-pdf-active-session-v3';
 const DB_NAME = 'pdf-cache-db-v3';
 const STORE_NAME = 'pdf-store';
 const THEME_KEY = 'gemini-pdf-chat-theme-v1';
+const API_KEY_KEY = 'gemini-pdf-chat-api-key-v1';
 const SpeechRecognitionAPI =
   (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
@@ -93,6 +94,14 @@ const dom = {
   menuToggleButton: document.getElementById('menu-toggle-button') as HTMLButtonElement,
   themeSwitcher: document.querySelector('.theme-switcher') as HTMLDivElement,
   themeButtons: document.querySelectorAll('.theme-switcher button') as NodeListOf<HTMLButtonElement>,
+  // API Key Modal Elements
+  settingsButton: document.getElementById('settings-button') as HTMLButtonElement,
+  apiKeyModalOverlay: document.getElementById('api-key-modal-overlay') as HTMLDivElement,
+  apiKeyModal: document.getElementById('api-key-modal') as HTMLDivElement,
+  apiKeyForm: document.getElementById('api-key-form') as HTMLFormElement,
+  apiKeyInput: document.getElementById('api-key-input') as HTMLInputElement,
+  apiKeyModalClose: document.getElementById('api-key-modal-close') as HTMLButtonElement,
+  toggleApiKeyVisibilityButton: document.getElementById('toggle-api-key-visibility') as HTMLButtonElement,
 };
 
 // --- App State ---
@@ -107,10 +116,11 @@ const state = {
   recognitionErrorOccurred: false,
   synth: window.speechSynthesis,
   voices: [] as SpeechSynthesisVoice[],
+  apiKey: null as string | null,
+  ai: null as GoogleGenAI | null,
 };
 
 // --- Gemini AI Setup ---
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const SYSTEM_INSTRUCTION = `أنت معلم خبير ومتخصص في مناهج اللغة العربية للمرحلة الثانوية الأزهرية في مصر. مهمتك هي مساعدة الطلاب على فهم دروسهم. عندما يعطيك الطالب صورة أو عدة صور من كتاب ويطرح سؤالاً، قم بتحليل النصوص في جميع الصور أولاً، ثم أجب على سؤاله بإجابة شاملة ولكن متوسطة الطول وموجزة. ركز على النقاط الأساسية وقدم شرحًا واضحًا ومباشرًا. استخدم التنسيق مثل القوائم والنقاط والعناوين لجعل إجابتك سهلة القراءة والفهم. كن دقيقاً في معلوماتك واعتمد على القواعد النحوية والبلاغية المقررة في المنهج الأزهري. ملاحظة هامة جداً: أنت ممنوع منعاً باتاً من استخدام تنسيق LaTeX الرياضي أو أي رموز برمجية أخرى. جميع إجاباتك يجب أن تكون نصاً عادياً بسيطاً ومفهوماً تماماً. إذا احتجت إلى كتابة معادلات أو رموز، فاكتبها كنص عادي تمامًا كما تظهر في الكتب المدرسية.`;
 
 
@@ -158,6 +168,53 @@ const db = {
     });
   }
 };
+
+
+// --- API Key Management ---
+function initializeAi(key: string): boolean {
+    if (!key) {
+      console.error("API key is missing.");
+      return false;
+    }
+    try {
+      state.ai = new GoogleGenAI({ apiKey: key });
+      state.apiKey = key;
+      console.log("Gemini AI initialized successfully.");
+      return true;
+    } catch (e) {
+      console.error("Failed to initialize GoogleGenAI:", e);
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      alert(`فشل تهيئة واجهة برمجة التطبيقات. قد يكون المفتاح غير صالح. الخطأ: ${errorMessage}`);
+      state.ai = null;
+      state.apiKey = null;
+      return false;
+    }
+}
+
+function showApiKeyModal() {
+    dom.apiKeyModalOverlay.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+    dom.apiKeyInput.value = state.apiKey || '';
+    dom.apiKeyModalClose.classList.toggle('hidden', !state.apiKey);
+}
+
+function hideApiKeyModal() {
+    dom.apiKeyModalOverlay.classList.add('hidden');
+    document.body.classList.remove('modal-open');
+}
+
+async function handleApiKeyFormSubmit(e: Event) {
+    e.preventDefault();
+    const newKey = dom.apiKeyInput.value.trim();
+    if (!newKey) {
+        alert("الرجاء إدخال مفتاح API.");
+        return;
+    }
+    localStorage.setItem(API_KEY_KEY, newKey);
+    if (initializeAi(newKey)) {
+        hideApiKeyModal();
+    }
+}
 
 
 // --- UI Functions ---
@@ -740,6 +797,12 @@ async function handleFormSubmit(e: Event) {
   e.preventDefault();
   speech.stop();
 
+  if (!state.ai) {
+    alert("الرجاء إعداد مفتاح API أولاً.");
+    showApiKeyModal();
+    return;
+  }
+
   const promptText = dom.promptInput.value.trim();
   if (!promptText || state.selectedPages.size === 0) {
     alert('الرجاء تحديد صفحة واحدة على الأقل وكتابة سؤال.');
@@ -775,7 +838,7 @@ async function handleFormSubmit(e: Event) {
     const typingIndicator = ui.showTypingIndicator();
     const modelContent = typingIndicator.querySelector('.message-content')!;
     
-    const stream = await ai.models.generateContentStream({
+    const stream = await state.ai.models.generateContentStream({
       model: 'gemini-2.5-flash',
       contents: [{ parts: [...imageParts, { text: promptText }] }],
       config: { 
@@ -820,7 +883,7 @@ async function handleFormSubmit(e: Event) {
     if (error instanceof Error) {
         // Check for specific authentication/permission errors (like 403)
         if (error.message.includes('403') || /API[-_ ]?key/i.test(error.message)) {
-            errorMessage = `حدث خطأ في المصادقة (Error 403). قد يكون هذا بسبب عدم صلاحية مفتاح API أو عدم تمكين الفوترة لمشروعك. يرجى التحقق من إعدادات مفتاح API ومشروع Google Cloud الخاص بك.`;
+            errorMessage = `حدث خطأ في المصادقة. قد يكون هذا بسبب عدم صلاحية مفتاح API أو عدم تمكين الفوترة لمشروعك. يرجى التحقق من مفتاح API الخاص بك بالضغط على أيقونة الإعدادات.`;
         } else {
             errorMessage = error.message;
         }
@@ -930,6 +993,16 @@ async function init() {
     }
   });
 
+  // API Key Modal Listeners
+  dom.settingsButton.addEventListener('click', showApiKeyModal);
+  dom.apiKeyForm.addEventListener('submit', handleApiKeyFormSubmit);
+  dom.apiKeyModalClose.addEventListener('click', hideApiKeyModal);
+  dom.toggleApiKeyVisibilityButton.addEventListener('click', () => {
+      const isPassword = dom.apiKeyInput.type === 'password';
+      dom.apiKeyInput.type = isPassword ? 'text' : 'password';
+      dom.toggleApiKeyVisibilityButton.querySelector('.eye-icon')?.classList.toggle('hidden', isPassword);
+      dom.toggleApiKeyVisibilityButton.querySelector('.eye-off-icon')?.classList.toggle('hidden', !isPassword);
+  });
 
   // Initial setup
   initTheme();
@@ -938,6 +1011,14 @@ async function init() {
     speechSynthesis.onvoiceschanged = speech.populateVoiceList;
   }
   speech.setupRecognition();
+  
+  // API Key initialization
+  const savedApiKey = localStorage.getItem(API_KEY_KEY);
+  if (savedApiKey) {
+    initializeAi(savedApiKey);
+  } else {
+    showApiKeyModal();
+  }
   
   loadSessionsFromStorage();
   const lastActiveId = localStorage.getItem(ACTIVE_SESSION_KEY);

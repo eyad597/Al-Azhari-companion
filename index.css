@@ -72,6 +72,7 @@ body {
   display: grid;
   grid-template-columns: 280px 1fr;
   height: 100vh;
+  transition: filter 0.3s ease-in-out;
 }
 
 .main-content {
@@ -210,17 +211,21 @@ body {
   background-color: color-mix(in srgb, var(--danger-color) 15%, transparent);
 }
 
-/* --- Theme Switcher --- */
-.theme-switcher {
+/* --- History Sidebar Footer --- */
+.history-footer {
   display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 1rem;
-  margin-top: auto; /* Pushes it to the bottom */
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  margin-top: auto;
   border-top: 1px solid var(--border-color);
   transition: border-color 0.3s;
 }
-.theme-switcher button {
+.theme-switcher {
+  display: flex;
+  gap: 0.5rem;
+}
+.history-footer button {
   background-color: var(--bg-color);
   border: 1px solid var(--border-color);
   color: var(--text-muted-color);
@@ -232,7 +237,7 @@ body {
   justify-content: center;
   transition: all 0.2s ease;
 }
-.theme-switcher button:hover {
+.history-footer button:hover {
   background-color: color-mix(in srgb, var(--primary-color) 10%, transparent);
   border-color: var(--primary-color);
   color: var(--primary-color);
@@ -667,6 +672,110 @@ body {
     color: var(--danger-hover-color);
 }
 
+/* --- API Key Modal --- */
+body.modal-open > .app-layout {
+    filter: blur(4px);
+    pointer-events: none;
+    user-select: none;
+}
+#api-key-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+#api-key-modal {
+  background-color: var(--sidebar-bg);
+  padding: 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px var(--shadow-color);
+  width: 90%;
+  max-width: 500px;
+  border: 1px solid var(--border-color);
+  position: relative;
+  text-align: center;
+}
+#api-key-modal h2 {
+  margin: 0 0 1rem;
+  color: var(--text-color);
+}
+#api-key-modal p {
+  color: var(--text-muted-color);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+#api-key-modal a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+}
+#api-key-modal a:hover {
+  text-decoration: underline;
+}
+#api-key-form label {
+  display: block;
+  text-align: right;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+.api-key-input-wrapper {
+  position: relative;
+}
+#api-key-input {
+  width: 100%;
+  padding: 0.8rem 1rem 0.8rem 45px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-size: 1rem;
+  direction: ltr;
+  text-align: left;
+}
+#toggle-api-key-visibility {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted-color);
+  padding: 5px;
+}
+#save-api-key-button {
+  width: 100%;
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 1.5rem;
+  transition: background-color 0.2s;
+}
+#save-api-key-button:hover {
+  background-color: var(--primary-hover-color);
+}
+#api-key-modal-close {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: transparent;
+    border: none;
+    font-size: 1.8rem;
+    color: var(--text-muted-color);
+    cursor: pointer;
+    line-height: 1;
+}
+
+
 /* --- Utilities & Animations --- */
 .hidden { display: none !important; }
 .spinner {
@@ -727,6 +836,6 @@ body {
   #menu-toggle-button {
       display: block;
   }
-  .chat-messages { padding: 1rem; }
+  #chat-messages { padding: 1rem; }
   .chat-message { max-width: 95%; }
 }
